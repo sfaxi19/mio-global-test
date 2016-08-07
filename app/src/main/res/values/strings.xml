@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MioGlobal_test</string>
+    <string name="action_settings">Settings</string>
+    <string name="stop_service">Stop service</string>
+</resources>
