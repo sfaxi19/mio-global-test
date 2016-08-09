@@ -22,13 +22,15 @@ import com.sfaxi19.mioglobal_test.R;
 /**
  * Created by sfaxi19 on 28.06.16.
  */
-public class MainSection implements ISection{
+public class MainSection {
 
     private final static String LOG_TAG = "myLogs";
     private MainActivity activity;
     private LinearLayout mainLayout;
     private final static String TEST_TAG ="Create and Destroy";
     private TextView heartRate;
+
+    public Button stopButton;
 
     public MainSection(MainActivity activity, View rootView) {
         this.activity = activity;
@@ -37,7 +39,7 @@ public class MainSection implements ISection{
 
     public void view() {
         Log.d(TEST_TAG, "MainSection use activity: " + activity.hashCode());
-        activity.handlerGetSettings.sendEmptyMessage(0);
+        //activity.hGetSettingsFromService.sendEmptyMessage(0);
         mainLayout.removeAllViews();
         startVisualisation();
 
@@ -52,7 +54,7 @@ public class MainSection implements ISection{
         heartRate.setTextSize(150);
         heartRate.setGravity(Gravity.CENTER);
 
-        final Button stopButton = new Button(activity);
+        stopButton = new Button(activity);
         if(activity.isServiceRunning(ForegroundService.class)) {
             stopButton.setText("Стоп");
         }else{
@@ -134,9 +136,8 @@ public class MainSection implements ISection{
         @Override
         public void handleMessage(Message msg) {
             if(!activity.mBound) return;
-            activity.handlerCheckDefaultConnect.sendEmptyMessage(0);
+            activity.hCheckConnect.sendEmptyMessage(0);
         }
     };
-
 
 }

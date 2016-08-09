@@ -7,7 +7,7 @@ import com.sfaxi19.mioglobal_test.sections.DiscoverSection;
  */
 public class MyCallback {
 
-    DiscoverSection discoverSection;
+    private DiscoverSection discoverSection;
 
     public MyCallback(DiscoverSection discoverSection) {
         this.discoverSection = discoverSection;
@@ -17,7 +17,7 @@ public class MyCallback {
 
     }
     public void viewDevice(String name, String address){
-        discoverSection.listView.writeButton(name, address);
+        discoverSection.deviceListView.writeButton(name, address);
     }
 
     public void finishDiscover(int devCount){
@@ -25,6 +25,7 @@ public class MyCallback {
         discoverSection.scanBtn.setEnabled(true);
         if(devCount>0){
             discoverSection.connectButtonView();
+            discoverSection.saveButtonView();
         }
     }
 }

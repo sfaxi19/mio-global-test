@@ -17,14 +17,14 @@ import java.util.Scanner;
 /**
  * Created by sfaxi19 on 28.06.16.
  */
-public class MessageListView extends LinearLayout implements View.OnClickListener{
+public class DeviceListView extends LinearLayout implements View.OnClickListener{
 
     private ArrayList<String> addressList=null;
     private int deviceNum=-1;
     private int id=0;
     private Button focusButton=null;
 
-    public MessageListView(Context context, ViewGroup parent) {
+    public DeviceListView(Context context, ViewGroup parent) {
         super(context);
         this.setOrientation(LinearLayout.VERTICAL);
         this.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT,

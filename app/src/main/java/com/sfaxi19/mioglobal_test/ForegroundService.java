@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -43,13 +44,13 @@ public class ForegroundService extends Service {
 	private final int NOTIFY_STATE_DEFAULT = 3;
 
 	private int notificationState = NOTIFY_STATE_DISCONNECT;
-	ScheduledExecutorService serviceSendUDP;
+	private ScheduledExecutorService serviceSendUDP;
 	private ScheduledFuture<?> sf;
 	private HashMap<String, String> settings;
 
 	private Sensors sensors;
-	private String path;
 	private WifiManager.WifiLock wifiLock = null;
+
 	public void onCreate() {
 		super.onCreate();
 	}
@@ -57,13 +58,25 @@ public class ForegroundService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.d(TEST_TAG, "onStartCommand");
 		if (intent!=null) {
-			this.path = intent.getStringExtra("path");
+			this.settings = convertStringToHashMap(intent.getStringExtra("settings"));
 		}
-
+		if(!settings.containsKey("device")){
+			settings.put("device","-1");
+		}
 		setDefaultNotification();
 		startBLEandSendUDP();
 
 		return Service.START_REDELIVER_INTENT;
+	}
+
+	private HashMap<String,String> convertStringToHashMap(String settingsString){
+		HashMap<String,String> data = new HashMap<String, String>();
+		Pattern p = Pattern.compile("[\\{\\}\\=\\, ]++");
+		String[] split = p.split(settingsString);
+		for ( int i=1; i+2 <= split.length; i+=2 ){
+			data.put( split[i], split[i+1] );
+		}
+		return data;
 	}
 
 	public void onDestroy() {
@@ -96,8 +109,7 @@ public class ForegroundService extends Service {
     }
 
 	public void startBLEandSendUDP() {
-		getDefaultSettings();
-		Log.d(TEST_TAG, "settigs: " + settings);
+		Log.d(TEST_TAG, "settings: " + settings);
 		sensors = new Sensors(this, settings.get("device"));
 		startUDPSend();
 	}
@@ -144,59 +156,10 @@ public class ForegroundService extends Service {
 		sf.cancel(b);
 	}
 
-	private void getDefaultSettings() {
-		File file = new File(path, "default_settings");
-		ObjectInputStream ois = null;
-		try {
-			FileInputStream inFile = new FileInputStream(file);
-			ois = new ObjectInputStream(inFile);
-			settings = (HashMap<String,String>)ois.readObject();
-			ois.close();
-		}
-		catch (FileNotFoundException e) {
-			e.printStackTrace();
-			settings = new HashMap<>();
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-		catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-
-		if(!settings.containsKey("ip")){
-			settings.put("ip","192.168.1.14");
-		}
-		if(!settings.containsKey("port")){
-			settings.put("port", "5554");
-		}
-		if(!settings.containsKey("period")){
-			settings.put("period","5");
-		}
-		if(!settings.containsKey("device")){
-			settings.put("device","-1");
-		}
-	}
-
-	public void saveDefaultSettings(){
-		File file = new File(path, "default_settings");
-		ObjectOutputStream oos = null;
-		try {
-			FileOutputStream outFile = new FileOutputStream(file);
-			oos = new ObjectOutputStream(outFile);
-			oos.writeObject(settings);
-			oos.close();
-		}  catch (IOException e) {
-			e.printStackTrace();
-		}
-		Log.d(LOG_TAG, "Saved:\n" + settings + "\n to " + path + "/default_settings");
-	}
-
 	public void updateNetworkSettings(HashMap<String,String> update){
 		sfCancel(true);
 		settings.putAll(update);
 		startUDPSend();
-		saveDefaultSettings();
 	}
 
 	public HashMap<String,String> getSettings(){
@@ -209,7 +172,6 @@ public class ForegroundService extends Service {
 		sensors.pulsometer.setDeviceAddress(settings.get("device"));
 		System.out.println(settings.get("device"));
 		sensors.pulsometer.connect();
-		saveDefaultSettings();
 	}
 
 	public void setNotificationState(String deviceAddress, int state){

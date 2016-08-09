@@ -15,14 +15,22 @@ import android.widget.TextView;
 import com.sfaxi19.mioglobal_test.MainActivity;
 import com.sfaxi19.mioglobal_test.R;
 
+import java.io.File;
+
 /**
  * Created by sfaxi19 on 30.06.16.
  */
-public class SettingsSection implements ISection{
+public class SettingsSection {
 
     private MainActivity activity;
     private LinearLayout mainLayout;
 
+    private EditText periodEditText;
+    private EditText portEditText;
+    private EditText ipEditText;
+    private EditText nameEditText;
+
+    private final static String LOG_TAG ="myLog";
 
     public SettingsSection(MainActivity activity, View rootView) {
         this.activity = activity;
@@ -47,7 +55,7 @@ public class SettingsSection implements ISection{
         TextView ipTextView = new TextView(activity);
         ipTextView.setText("IP-адрес получателя:");
         ipTextView.setTextSize(20);
-        final EditText ipEditText = new EditText(activity);
+        ipEditText = new EditText(activity);
         ipEditText.setHint("192.168.1.14");
         InputFilter[] filters = new InputFilter[1];
         filters[0] = new InputFilter() {
@@ -90,7 +98,7 @@ public class SettingsSection implements ISection{
         TextView portTextView = new TextView(activity);
         portTextView.setText("Порт:");
         portTextView.setTextSize(20);
-        final EditText portEditText = new EditText(activity);
+        portEditText = new EditText(activity);
         portEditText.setHint("5554");
         portEditText.setInputType(InputType.TYPE_CLASS_PHONE);
         portEditText.setMinWidth(100);
@@ -103,7 +111,7 @@ public class SettingsSection implements ISection{
         periodTextView.setText("Период отправки:");
         periodTextView.setTextSize(20);
         periodTextView.setPadding(0, 20, 0, 0);
-        final EditText periodEditText = new EditText(activity);
+        periodEditText = new EditText(activity);
         periodEditText.setInputType(InputType.TYPE_CLASS_PHONE);
         periodEditText.setMinWidth(100);
         periodEditText.setHint("5");
@@ -118,7 +126,7 @@ public class SettingsSection implements ISection{
         nameTextView.setTextSize(30);
         nameTextView.setPadding(0, 30, 0, 20);
         nameTextView.setGravity(Gravity.CENTER_HORIZONTAL);
-        final EditText nameEditText = new EditText(activity);
+        nameEditText = new EditText(activity);
         nameEditText.setTextSize(35);
         nameEditText.setTextColor(Color.rgb(255, 0, 0));
         nameEditText.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -128,34 +136,65 @@ public class SettingsSection implements ISection{
         settingsLayout.addView(nameEditText);
 
         Button acceptBtn = new Button(activity);
-        acceptBtn.setText("Принять");
+        acceptBtn.setText("Применить");
+        acceptBtn.setPadding(0,10,0,10);
         settingsLayout.addView(acceptBtn);
         acceptBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                boolean change = false;
-                if (!periodEditText.getText().toString().isEmpty()) {
-                    activity.settings.put("period", periodEditText.getText().toString());
-                    change=true;
-                }
-                if (!ipEditText.getText().toString().isEmpty()) {
-                    activity.settings.put("ip", ipEditText.getText().toString());
-                    change=true;
-                }
-                if (!portEditText.getText().toString().isEmpty()) {
-                    activity.settings.put("port", portEditText.getText().toString());
-                    change=true;
-                }
-                if (!nameEditText.getText().toString().isEmpty()) {
-                    activity.nameTextView.setText(nameEditText.getText().toString());
-                    activity.settings.put("name", nameEditText.getText().toString());
-                    change=true;
-                }
-                if(change) {
-                    activity.handlerNetworkSettings.sendEmptyMessage(0);
-                }
+                putSettings();
+                activity.hUpdateNetworkSettings.sendEmptyMessage(0);
+                activity.nameTextView.setText(activity.settings.get("name"));
             }
         });
+
+        Button saveBtn = new Button(activity);
+        saveBtn.setText("Запомнить");
+        saveBtn.setPadding(0,10,0,10);
+        settingsLayout.addView(saveBtn);
+        saveBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                putSettings();
+                activity.saveNetworkSettings();
+            }
+        });
+
+        Button deleteBtn = new Button(activity);
+        deleteBtn.setText("Забыть");
+        deleteBtn.setPadding(0,10,0,10);
+        settingsLayout.addView(deleteBtn);
+        deleteBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                File file = new File(activity.getFilesDir(), "default_settings");
+                file.delete();
+            }
+        });
+    }
+
+    private void putSettings(){
+        if (!periodEditText.getText().toString().isEmpty()) {
+            activity.settings.put("period", periodEditText.getText().toString());
+        }else{
+            activity.settings.put("period", periodEditText.getHint().toString());
+        }
+        if (!ipEditText.getText().toString().isEmpty()) {
+            activity.settings.put("ip", ipEditText.getText().toString());
+        }else{
+            activity.settings.put("ip", ipEditText.getHint().toString());
+        }
+        if (!portEditText.getText().toString().isEmpty()) {
+            activity.settings.put("port", portEditText.getText().toString());
+        }else{
+            activity.settings.put("port", portEditText.getHint().toString());
+        }
+        if (!nameEditText.getText().toString().isEmpty()) {
+            activity.nameTextView.setText(nameEditText.getText().toString());
+            activity.settings.put("name", nameEditText.getText().toString());
+        }else{
+            activity.settings.put("name", nameEditText.getHint().toString());
+        }
     }
 
 }

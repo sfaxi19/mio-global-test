@@ -22,14 +22,17 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
-import com.sfaxi19.mioglobal_test.view.DepthPageTransformer;
+import com.sfaxi19.mioglobal_test.sections.MainSection;
+import com.sfaxi19.mioglobal_test.sections.SettingsSection;
 import com.sfaxi19.mioglobal_test.view.SectionsPagerAdapter;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
@@ -37,10 +40,14 @@ public class MainActivity extends AppCompatActivity {
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private MyViewPager mViewPager;
     private final static String TEST_TAG ="Create and Destroy";
-    public Thread threadHeartRate;
+    private final static String LOG_TAG ="myLog";
+    public MainSection mainSection;
+    public SettingsSection settingsSection;
 
+    public Thread threadHeartRate;
     public TextView nameTextView;
     public HashMap<String,String> settings;
+
     private boolean dialogDisplayed = false;
     private boolean dialogOff = false;
     private DiscovererBluetoothDevice discovererDevice;
@@ -85,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
             if(!mBound) {
                 bindService(new Intent(this, ForegroundService.class), mConnection, Context.BIND_AUTO_CREATE);
             }
+            hGetSettingsFromService.sendEmptyMessage(0);
         }
         super.onStart();
     }
@@ -111,7 +119,6 @@ public class MainActivity extends AppCompatActivity {
                 };
                 discovererDevice = new DiscovererBluetoothDevice(MainActivity.this);
                 discovererDevice.getDiscoveredDevices(dialogCallback);
-
             }
         });
         dialog.setNeutralButton("Выбрать устройство", new DialogInterface.OnClickListener() {
@@ -140,15 +147,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(null);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.activity_main);
-        getDefaultSettings();
+        settings = getSavedSettings();
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         bluetoothEnable();
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
         mSectionsPagerAdapter.link(this);
-
         mViewPager = (MyViewPager) findViewById(R.id.container);
-
         //mViewPager.setPageTransformer(true, new DepthPageTransformer());
         mViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
@@ -159,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
             public void onPageSelected(int position) {
                 switch (position) {
                     case 0:
-                        handlerGetSettings.sendEmptyMessage(0);
+                        //hGetSettingsFromService.sendEmptyMessage(0);
                         mViewPager.setActive(true);
                         break;
                     case 1:
@@ -173,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         break;
                     case 2:
-                        handlerGetSettings.sendEmptyMessage(0);
+                        //hGetSettingsFromService.sendEmptyMessage(0);
                         mViewPager.setActive(true);
                         break;
                 }
@@ -187,8 +192,8 @@ public class MainActivity extends AppCompatActivity {
         mViewPager.setCurrentItem(1, false);
     }
 
-    private final int MENU_STOP_SERVICE = 0;
-    private final int MENU_SETTINGS = 1;
+    private final int MENU_STOP_SERVICE = 1;
+    private final int MENU_SETTINGS = 0;
     private final int MENU_DISCOVER = 2;
     private final int MENU_CLEAR_SETTINGS = 3;
 
@@ -198,11 +203,9 @@ public class MainActivity extends AppCompatActivity {
         CharSequence stopServiceItem = "Остановить сервис";
         CharSequence settingsItem = "Настройки";
         CharSequence discoverItem = "Сканирование";
-        CharSequence clearSettings = "Сбросить настройки";
         menu.add(0, MENU_STOP_SERVICE, 0, stopServiceItem);
         menu.add(0, MENU_SETTINGS, 0, settingsItem);
         menu.add(0, MENU_DISCOVER, 0, discoverItem);
-        menu.add(0, MENU_CLEAR_SETTINGS, 0, clearSettings);
         return true;
     }
 
@@ -226,6 +229,7 @@ public class MainActivity extends AppCompatActivity {
                     unbindService(mConnection);
                     mBound = false;
                 }
+                mainSection.stopButton.setText("Старт");
                 break;
             case MENU_SETTINGS:
                 mViewPager.setCurrentItem(0,true);
@@ -233,30 +237,24 @@ public class MainActivity extends AppCompatActivity {
             case MENU_DISCOVER:
                 mViewPager.setCurrentItem(2,true);
                 break;
-            case MENU_CLEAR_SETTINGS:
-                File file = new File(this.getFilesDir(), "default_settings");
-                file.delete();
-                break;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    private void getDefaultSettings() {
+    private HashMap<String, String> getSavedSettings() {
         File file = new File(this.getFilesDir(), "default_settings");
         ObjectInputStream ois = null;
+        HashMap<String, String> savedSettings;
         try {
             FileInputStream inFile = new FileInputStream(file);
             ois = new ObjectInputStream(inFile);
-            settings = (HashMap<String, String>) ois.readObject();
+            savedSettings = (HashMap<String, String>) ois.readObject();
             ois.close();
-        } catch (FileNotFoundException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
-            settings = new HashMap<>();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            savedSettings = new HashMap<>();
         }
+        return savedSettings;
     }
 
     public boolean isServiceRunning(Class<?> serviceClass) {
@@ -278,7 +276,20 @@ public class MainActivity extends AppCompatActivity {
     public void startService(){
         Intent intent = new Intent(this, ForegroundService.class);
         if(!isServiceRunning(ForegroundService.class)){
-            startService(intent.putExtra("path", getFilesDir().toString()));
+            if(!settings.containsKey("port")) {
+                settings.put("period", "5");
+            }
+            if(!settings.containsKey("ip")) {
+                settings.put("ip", "192.168.1.14");
+            }
+            if(!settings.containsKey("port")) {
+                settings.put("port", "5554");
+            }
+            if(!settings.containsKey("name")){
+                settings.put("name", "4");
+            }
+            Log.d(LOG_TAG, "Start service with settings: " + settings);
+            startService(intent.putExtra("settings", settings.toString()));
         }
         if(!mBound) {
             bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
@@ -299,7 +310,51 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    public Handler handlerNetworkSettings = new Handler(){
+    public void saveNetworkSettings() {
+        if (settings == null) return;
+        String path = getFilesDir().toString();
+        File file = new File(path, "default_settings");
+        HashMap<String, String> lastSettings = getSavedSettings();
+        try {
+
+
+            lastSettings.put("ip", settings.get("ip"));
+            lastSettings.put("port", settings.get("port"));
+            lastSettings.put("period", settings.get("period"));
+            lastSettings.put("name", settings.get("name"));
+            ObjectOutputStream oos = null;
+
+            FileOutputStream outFile = new FileOutputStream(file);
+            oos = new ObjectOutputStream(outFile);
+            oos.writeObject(lastSettings);
+            oos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Log.d(LOG_TAG, "Saved:\n" + lastSettings + "\n to " + path + "/default_settings");
+    }
+
+    public void saveDeviceSettings() {
+        if (settings == null) return;
+        String path = getFilesDir().toString();
+        File file = new File(path, "default_settings");
+        HashMap<String, String> lastSettings = getSavedSettings();
+        try {
+
+
+            lastSettings.put("device", settings.get("device"));
+            ObjectOutputStream oos = null;
+            FileOutputStream outFile = new FileOutputStream(file);
+            oos = new ObjectOutputStream(outFile);
+            oos.writeObject(lastSettings);
+            oos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Log.d(LOG_TAG, "Saved:\n" + lastSettings + "\n to " + path + "/default_settings");
+    }
+
+    public Handler hUpdateNetworkSettings = new Handler(){
         @Override
         public void handleMessage(Message msg) {
             if(!mBound) return;
@@ -307,7 +362,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    public Handler handlerDeviceSettings = new Handler(){
+    public Handler hUpdateDeviceSettings = new Handler(){
         @Override
         public void handleMessage(Message msg) {
             if(!mBound) return;
@@ -316,7 +371,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    public Handler handlerGetSettings = new Handler(){
+    public Handler hGetSettingsFromService = new Handler(){
         @Override
         public void handleMessage(Message msg) {
             if(!mBound) return;
@@ -324,7 +379,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    public Handler handlerCheckDefaultConnect = new Handler(){
+    public Handler hCheckConnect = new Handler(){
         @Override
         public void handleMessage(Message msg) {
             if(mService.getConnectionState()==2) dialogOff=true;

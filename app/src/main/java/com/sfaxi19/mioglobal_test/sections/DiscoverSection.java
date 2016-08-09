@@ -1,5 +1,6 @@
 package com.sfaxi19.mioglobal_test.sections;
 
+import android.app.PendingIntent;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -11,55 +12,25 @@ import com.sfaxi19.mioglobal_test.DiscovererBluetoothDevice;
 import com.sfaxi19.mioglobal_test.MainActivity;
 import com.sfaxi19.mioglobal_test.MyCallback;
 import com.sfaxi19.mioglobal_test.R;
-import com.sfaxi19.mioglobal_test.view.MessageListView;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.StreamCorruptedException;
+import com.sfaxi19.mioglobal_test.view.DeviceListView;
 
 /**
  * Created by sfaxi19 on 06.07.16.
  */
-public class DiscoverSection implements ISection{
+public class DiscoverSection {
 
-    LinearLayout mainLayout;
-    MainActivity activity;
-    public MessageListView listView;
-    DiscovererBluetoothDevice discovererDevice;
+    private LinearLayout mainLayout;
+    private MainActivity activity;
+    private DiscovererBluetoothDevice discovererDevice;
+    public DeviceListView deviceListView;
     public Button scanBtn;
+    public Button saveBtn;
     public Button connectBtn;
     private final static String LOG_TAG = "myLogs";
 
     public DiscoverSection(MainActivity activity, View rootView){
         this.activity = activity;
         mainLayout = (LinearLayout) rootView.findViewById(R.id.fragmentLayout);
-        TextView titleTextView = new TextView(activity);
-        titleTextView.setText("Поиск устройств");
-        titleTextView.setTextSize(35);
-        titleTextView.setPadding(0, 0, 0, 40);
-        titleTextView.setGravity(Gravity.CENTER_HORIZONTAL);
-        mainLayout.addView(titleTextView);
-        scanBtn = new Button(activity);
-        scanBtn.setText("Сканировать");
-        mainLayout.addView(scanBtn);
-        listView = new MessageListView(activity,mainLayout);
-        discovererDevice = new DiscovererBluetoothDevice(activity);
-        listView.setPadding(0,15,0,15);
-        scanBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                listView.removeAllViews();
-                Button tmp = (Button) v;
-                tmp.setText("Сканирование...");
-                tmp.setEnabled(false);
-                if(connectBtn!=null) mainLayout.removeView(connectBtn);
-                discovererDevice.getDiscoveredDevices(new MyCallback(DiscoverSection.this));
-            }
-        });
-
     }
 
     public void connectButtonView(){
@@ -69,18 +40,55 @@ public class DiscoverSection implements ISection{
         connectBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(listView.getAddress()==null) return;
-                activity.settings.put("device", listView.getAddress());
-                Log.d(LOG_TAG, "Discovered: " + listView.getAddress());
-                activity.handlerDeviceSettings.sendEmptyMessage(0);
+                if(deviceListView.getAddress()==null) return;
+                activity.settings.put("device", deviceListView.getAddress());
+                Log.d(LOG_TAG, "Discovered: " + deviceListView.getAddress());
+                activity.hUpdateDeviceSettings.sendEmptyMessage(0);
             }
         });
     }
 
-    @Override
-    public void view() {
+    public void saveButtonView(){
+        saveBtn = new Button(activity);
+        saveBtn.setText("Запомнить устройство");
+        mainLayout.addView(saveBtn);
+        saveBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(deviceListView.getAddress()==null) return;
+                activity.settings.put("device", deviceListView.getAddress());
+                Log.d(LOG_TAG, "Save device: " + deviceListView.getAddress());
+                activity.saveDeviceSettings();
+            }
+        });
     }
 
+    public void view(){
+        TextView titleTextView = new TextView(activity);
+        titleTextView.setText("Поиск устройств");
+        titleTextView.setTextSize(35);
+        titleTextView.setPadding(0, 0, 0, 40);
+        titleTextView.setGravity(Gravity.CENTER_HORIZONTAL);
+        mainLayout.addView(titleTextView);
+        scanBtn = new Button(activity);
+        scanBtn.setText("Сканировать");
+        mainLayout.addView(scanBtn);
+        deviceListView = new DeviceListView(activity,mainLayout);
+        discovererDevice = new DiscovererBluetoothDevice(activity);
+        deviceListView.setPadding(0, 25, 0, 25);
+        scanBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                deviceListView.removeAllViews();
+                Button tmp = (Button) v;
+                tmp.setText("Сканирование...");
+                tmp.setEnabled(false);
+                if(connectBtn!=null) mainLayout.removeView(connectBtn);
+                if(saveBtn!=null) mainLayout.removeView(saveBtn);
+                discovererDevice.getDiscoveredDevices(new MyCallback(DiscoverSection.this));
+            }
+        });
+    }
 
 }
 
