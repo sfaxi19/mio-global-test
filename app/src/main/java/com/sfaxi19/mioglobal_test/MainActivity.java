@@ -169,6 +169,7 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case 1:
                         mViewPager.setActive(false);
+                        mViewPager.setActive(false);
                         if(discovererDevice!=null) {
                             if(!discovererDevice.isScanning()) {
                                 dialogDisplayed = false;
@@ -192,10 +193,11 @@ public class MainActivity extends AppCompatActivity {
         mViewPager.setCurrentItem(1, false);
     }
 
-    private final int MENU_STOP_SERVICE = 1;
-    private final int MENU_SETTINGS = 0;
+    private final int MENU_MAIN = 0;
+    private final int MENU_SETTINGS = 1;
     private final int MENU_DISCOVER = 2;
-    private final int MENU_CLEAR_SETTINGS = 3;
+    private final int MENU_STOP_SERVICE = 3;
+    private final int MENU_CLEAR_SETTINGS = 4;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -203,9 +205,12 @@ public class MainActivity extends AppCompatActivity {
         CharSequence stopServiceItem = "Остановить сервис";
         CharSequence settingsItem = "Настройки";
         CharSequence discoverItem = "Сканирование";
-        menu.add(0, MENU_STOP_SERVICE, 0, stopServiceItem);
+        CharSequence mainItem = "На Главную";
+        menu.add(0, MENU_MAIN, 0, mainItem);
         menu.add(0, MENU_SETTINGS, 0, settingsItem);
         menu.add(0, MENU_DISCOVER, 0, discoverItem);
+        menu.add(0, MENU_STOP_SERVICE, 0, stopServiceItem);
+
         return true;
     }
 
@@ -222,6 +227,15 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch(id){
+            case MENU_MAIN:
+                mViewPager.setCurrentItem(1,true);
+                break;
+            case MENU_SETTINGS:
+                mViewPager.setCurrentItem(0, true);
+                break;
+            case MENU_DISCOVER:
+                mViewPager.setCurrentItem(2,true);
+                break;
             case MENU_STOP_SERVICE:
                 Log.d(TEST_TAG,"Stop service from " + this.hashCode());
                 stopService(new Intent(this, ForegroundService.class));
@@ -230,12 +244,6 @@ public class MainActivity extends AppCompatActivity {
                     mBound = false;
                 }
                 mainSection.stopButton.setText("Старт");
-                break;
-            case MENU_SETTINGS:
-                mViewPager.setCurrentItem(0,true);
-                break;
-            case MENU_DISCOVER:
-                mViewPager.setCurrentItem(2,true);
                 break;
         }
         return super.onOptionsItemSelected(item);
@@ -288,6 +296,9 @@ public class MainActivity extends AppCompatActivity {
             if(!settings.containsKey("name")){
                 settings.put("name", "4");
             }
+            if(!settings.containsKey("packet")){
+                settings.put("packet","2");
+            }
             Log.d(LOG_TAG, "Start service with settings: " + settings);
             startService(intent.putExtra("settings", settings.toString()));
         }
@@ -316,12 +327,11 @@ public class MainActivity extends AppCompatActivity {
         File file = new File(path, "default_settings");
         HashMap<String, String> lastSettings = getSavedSettings();
         try {
-
-
             lastSettings.put("ip", settings.get("ip"));
             lastSettings.put("port", settings.get("port"));
             lastSettings.put("period", settings.get("period"));
             lastSettings.put("name", settings.get("name"));
+            lastSettings.put("packet", settings.get("packet"));
             ObjectOutputStream oos = null;
 
             FileOutputStream outFile = new FileOutputStream(file);
@@ -340,8 +350,6 @@ public class MainActivity extends AppCompatActivity {
         File file = new File(path, "default_settings");
         HashMap<String, String> lastSettings = getSavedSettings();
         try {
-
-
             lastSettings.put("device", settings.get("device"));
             ObjectOutputStream oos = null;
             FileOutputStream outFile = new FileOutputStream(file);

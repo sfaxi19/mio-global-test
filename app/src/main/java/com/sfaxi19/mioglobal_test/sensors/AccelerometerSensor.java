@@ -18,6 +18,28 @@ public class AccelerometerSensor {
     private float Z = 0.0f;
     private int cnt = 0;
 
+
+
+    public Coordinate getAllCoordinate(){
+        Coordinate coord = new Coordinate();
+        if(cnt == 0) {
+            coord.X = "0.0";
+            coord.Y = "0.0";
+            coord.Z = "0.0";
+        }
+        else {
+            coord.X = String.format("%.1f", X/cnt);
+            coord.Y = String.format("%.1f", Y/cnt);
+            coord. Z = String.format("%.1f", Z/cnt);
+        }
+
+        X = 0.0f;
+        Y = 0.0f;
+        Z = 0.0f;
+        cnt = 0;
+        return coord;
+    }
+
     public String getCoordinate() {
         String result;
         if(cnt == 0) {

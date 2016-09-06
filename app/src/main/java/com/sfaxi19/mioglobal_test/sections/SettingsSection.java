@@ -9,6 +9,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -29,7 +31,9 @@ public class SettingsSection {
     private EditText portEditText;
     private EditText ipEditText;
     private EditText nameEditText;
-
+    private static RadioGroup radioGroup;
+    private static RadioButton radioButtonPack1;
+    private static RadioButton radioButtonPack2;
     private final static String LOG_TAG ="myLog";
 
     public SettingsSection(MainActivity activity, View rootView) {
@@ -110,7 +114,7 @@ public class SettingsSection {
         TextView periodTextView = new TextView(activity);
         periodTextView.setText("Период отправки:");
         periodTextView.setTextSize(20);
-        periodTextView.setPadding(0, 20, 0, 0);
+        periodTextView.setPadding(0, 10, 0, 0);
         periodEditText = new EditText(activity);
         periodEditText.setInputType(InputType.TYPE_CLASS_PHONE);
         periodEditText.setMinWidth(100);
@@ -118,6 +122,32 @@ public class SettingsSection {
         periodEditText.setText(activity.settings.get("period"));
         grid.addView(periodTextView);
         grid.addView(periodEditText);
+
+        //packet type
+        TextView packetTextView = new TextView(activity);
+        packetTextView.setText("Тип пакета:");
+        packetTextView.setTextSize(20);
+        packetTextView.setPadding(0, 10, 0, 0);
+        grid.addView(packetTextView);
+        radioGroup = new RadioGroup(activity);
+        radioButtonPack1 = new RadioButton(activity);
+        radioButtonPack2 = new RadioButton(activity);
+        radioButtonPack1.setText("Puls RSSI MAC X Y Z DATE");
+        radioButtonPack2.setText("Type Puls XYZ MAC");
+        radioButtonPack1.setTextSize(9);
+        radioButtonPack2.setTextSize(9);
+        radioGroup.removeAllViews();
+        radioButtonPack1.setId(0);
+        radioButtonPack2.setId(1);
+        radioGroup.addView(radioButtonPack1,0);
+        radioGroup.addView(radioButtonPack2,1);
+        if(activity.settings.containsKey("packet")){
+            radioGroup.check(Integer.decode(activity.settings.get("packet")));
+        }else{
+            radioGroup.check(1);
+        }
+
+        grid.addView(radioGroup);
         settingsLayout.addView(grid);
 
         //name
@@ -195,6 +225,7 @@ public class SettingsSection {
         }else{
             activity.settings.put("name", nameEditText.getHint().toString());
         }
+        activity.settings.put("packet", String.valueOf(radioGroup.getCheckedRadioButtonId()));
     }
 
 }

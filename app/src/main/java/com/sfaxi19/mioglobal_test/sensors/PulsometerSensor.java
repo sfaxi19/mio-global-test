@@ -24,11 +24,9 @@ public class PulsometerSensor {
     private BluetoothGatt    bluetoothGatt;
     private BluetoothGattCharacteristic bluetoothGattCharacteristic;
 
-
     public static final int STATE_DISCONNECTED = 0;
     public static final int STATE_CONNECTING = 1;
     public static final int STATE_CONNECTED = 2;
-
 
     private int mConnectionState = STATE_DISCONNECTED;
 
@@ -112,7 +110,6 @@ public class PulsometerSensor {
             Log.d(LOG_TAG, "Serv. Unable to obtain a BluetoothAdapter.");
             return false;
         }
-
 
         if(deviceAddress.equals("-1")) return false;
         discovererDevice = new DiscovererBluetoothDevice(context);
@@ -321,7 +318,5 @@ public class PulsometerSensor {
                 .getService(UUID_HEART_RATE_SERVICE)
                 .getCharacteristic(UUID_HEART_RATE_MEASUREMENT);
     }
-
-
 
 }
